@@ -1,129 +1,182 @@
-# Análisis Comparativo de Modelos de Machine Learning
+# Análisis comparativo de modelos: Clasificación y Regresión (German Credit – UCI)
 
-Este proyecto implementa un análisis comparativo entre distintos algoritmos de **Machine Learning supervisado y no supervisado**, evaluando su rendimiento sobre un dataset real. Se busca identificar el modelo más adecuado en términos de métricas de desempeño, interpretación y aplicación práctica.
+Este repositorio contiene dos notebooks de análisis predictivo (clasificación y regresión) basados en el **dataset German Credit (UCI Statlog)**. El objetivo es comparar distintos modelos, documentar el preprocesamiento, justificar las métricas de evaluación y reportar los resultados con buenas prácticas de ciencia de datos (EDA, preparación de datos, validación y tuning básico).
 
----
-
-## Índice
-
-1. [Objetivo del Proyecto](#objetivo-del-proyecto)
-2. [Datos Utilizados](#datos-utilizados)
-3. [Metodología](#metodología)
-
-   * 3.1 Preprocesamiento de datos
-   * 3.2 Modelos implementados
-   * 3.3 Evaluación y métricas
-4. [Resultados](#resultados)
-5. [Visualizaciones](#visualizaciones)
-6. [Conclusiones](#conclusiones)
-7. [Requisitos](#requisitos)
-8. [Ejecutar el Notebook](#ejecutar-el-notebook)
+> Notebooks incluidos:
+> - `Analisis-comparativo-modelo-clasificacion.ipynb`
+> - `Analisis-comparativo-modelo-regresion.ipynb`
 
 ---
 
-## Objetivo del Proyecto
+## 1) Problemas abordados
 
-Comparar el rendimiento de distintos modelos de Machine Learning (regresión, clasificación y clustering) aplicados a un conjunto de datos, con el fin de determinar cuál es el más eficiente para el problema planteado en el **Solemne 2** del curso de *Machine Learning*.
+### 1.1 Clasificación (riesgo crediticio)
+- **Variable objetivo:** `default` (0 = buen pagador, 1 = mal pagador).
+- **Meta:** detectar correctamente a clientes con **alto riesgo** (clase 1).  
+- **Énfasis:** recordatorio (recall) de la clase positiva y métricas robustas ante desbalance (PR-AUC).
 
----
-
-## Datos Utilizados
-
-* Dataset: **\[incluye aquí el nombre del dataset cargado en el notebook]**
-* Variables: se analizaron variables numéricas y categóricas relevantes para la predicción/clasificación.
-* Se aplicaron técnicas de normalización y codificación cuando fue necesario.
-
----
-
-## Metodología
-
-### 3.1 Preprocesamiento de datos
-
-* Limpieza de valores nulos y duplicados.
-* Exploración inicial (head, info, describe).
-* Escalado de variables numéricas.
-* One-hot encoding en variables categóricas.
-
-### 3.2 Modelos implementados
-
-* **Regresión Logística** (baseline).
-* **Support Vector Machine (SVM)**.
-* **Árboles de Decisión** y **Random Forest**.
-* **K-Means** para clustering exploratorio.
-
-### 3.3 Evaluación y métricas
-
-* **Validación cruzada (k-fold)**.
-* **Matriz de confusión**.
-* **ROC-AUC, Accuracy, Precision, Recall, F1-score**.
-* **Método del Codo y Silhouette Score** en clustering.
+### 1.2 Regresión (monto de crédito)
+- **Variable objetivo:** `credit_amount` (monto del crédito solicitado).  
+- **Meta:** estimar el monto a partir de atributos demográficos, laborales y de historial crediticio.
 
 ---
 
-## Resultados
+## 2) Dataset y variables
 
-* Los modelos supervisados mostraron diferencias notables en precisión y recall.
-* La regresión logística presentó un desempeño competitivo y alta interpretabilidad.
-* SVM obtuvo métricas similares pero con mayor complejidad computacional.
-* Random Forest logró el mejor equilibrio entre exactitud y robustez.
-* En clustering, el método silhouette identificó **k=4** como el número óptimo de grupos.
+- **Fuente:** German Credit (UCI).  
+- **Observaciones:** 1.000 casos con variables demográficas/económicas y de comportamiento crediticio.
+- **Ejemplos de variables:**
+  - Numéricas: `duration_in_month`, `credit_amount`, `installment_as_income_perc`, `age`, etc.
+  - Categóricas: `purpose`, `housing`, `saving_accounts`, `checking_status`, `personal_status_sex` (se **fragmenta** en *sexo* y *estado civil*), etc.
 
----
-
-## Visualizaciones
-
-El notebook incluye gráficos como:
-
-* Curvas ROC.
-* Matriz de confusión.
-* Método del Codo y Silhouette Score.
-* Gráficos de dispersión coloreados por clústeres.
-* PCA para reducción de dimensionalidad.
+> En el cuaderno se muestran:
+> - Tratamiento de valores nulos.
+> - **Label Encoding** y **One-Hot Encoding**.
+> - Separación de `personal_status_sex` en dos campos (sexo / estado civil).
+> - Estadística descriptiva y *insights* (p. ej., relación moderada-alta entre `credit_amount` y `duration_in_month`).
 
 ---
 
-## Conclusiones
+## 3) Metodología de trabajo
 
-El análisis comparativo muestra que **Random Forest** se posiciona como la mejor alternativa en términos de desempeño general, mientras que la **Regresión Logística** destaca como modelo interpretable y sólido como baseline. Para clustering, la elección de **k=4** ofrece una segmentación clara y útil para aplicaciones prácticas.
+### 3.1 Preprocesamiento
+- Imputación de faltantes (según tipo de variable).
+- Codificación de categóricas: **Label Encoding** (para ordinales) y **One-Hot Encoding** (para nominales).
+- Escalado comparado: **StandardScaler**, **RobustScaler** y **MinMaxScaler** (según sensibilidad a *outliers* y modelo).
+- Revisión de distribución (normalidad) y correlaciones (Pearson/Spearman/Kendall).
 
-Este trabajo evidencia la importancia de combinar métricas cuantitativas con análisis visual e interpretativo para seleccionar el modelo más adecuado según el contexto.
+### 3.2 Validación y evaluación
+- **Partición:** *train/test* + validación con **KFold** / **StratifiedKFold** (en clasificación).
+- **Métricas de clasificación (clase positiva = `default=1`):**
+  - **Recall** (prioridad), **Precision**, **F1**, **PR-AUC** (idónea en desbalance), **ROC-AUC** (referencia).
+- **Métricas de regresión:** **MAE**, **RMSE**, **R²** (se reportan valores *median/std* cuando procede).
+- **Desbalance:** uso de `class_weight='balanced'` en modelos lineales/no lineales y **ajuste de umbral** de decisión para optimizar *trade-offs* (recall vs precision).
+
+### 3.3 Modelos comparados (según notebook)
+- **Clasificación:** Regresión Logística, **SVM (RBF)**, KNN.  
+- **Regresión:** **Regresión Lineal**, Árbol de Regresión, **SVR (RBF)**.  
+- (En el análisis se discute por qué descartar/aceptar cada enfoque y el impacto del escalado).
 
 ---
 
-## Requisitos
+## 4) Resultados principales
 
-Librerías necesarias:
+### 4.1 Clasificación (riesgo crediticio)
+- **Mejor modelo global:** **SVM (RBF con umbral optimizado)**  
+  - Resultados reportados en test (clase `default=1`):  
+    - **Recall ≈ 0.67**, **Precision ≈ 0.61**, **F1 ≈ 0.64**  
+    - **ROC-AUC ~ 0.80** (PR-AUC reportada en torno a ~0.65 en el análisis)  
+  - Motivo: mejor equilibrio para **reducir falsos negativos** (riesgo de alto costo) sin disparar falsos positivos.
 
-* pandas
-* numpy
-* matplotlib
-* seaborn
-* scikit-learn
+- **Alternativa interpretable:** **Regresión Logística**  
+  - Desempeño cercano al SVM, **ROC-AUC ~ 0.74**; ventajosa si se requiere **explicabilidad** (coeficientes, odds ratios).
 
-Instalación rápida:
+- **Modelo descartado:** **KNN**  
+  - Bajo *recall* en la clase minoritaria; sensible al escalado y a la densidad local de datos.
 
-```bash
-pip install pandas numpy matplotlib seaborn scikit-learn
+> Conclusión operativa: si la prioridad es **minimizar morosos no detectados**, usar **SVM (RBF + umbral)**; si se privilegia **explicabilidad** y despliegue sencillo, **Regresión Logística**.
+
+### 4.2 Regresión (monto del crédito)
+
+| Modelo                | MAE (med) | MAE (std) | RMSE (med) | R² (med) |
+|----------------------|-----------:|----------:|-----------:|---------:|
+| **Regresión Lineal** | **1301.14**| **49.08** | **1867.33**| **0.56** |
+| Árbol de Regresión   | 1367.06    | 59.52     | 2106.07    | 0.43     |
+| SVR (RBF)            | 1647.24    | 91.52     | 2679.91    | 0.09     |
+
+- **Mejor modelo:** **Regresión Lineal** por menor error (MAE/RMSE) y **R² ~ 0.56**.  
+- **Árbol:** interpretabilidad por reglas, pero pierde precisión global.  
+- **SVR (RBF):** no se adapta bien al patrón del dataset (en las condiciones evaluadas).
+
+> *Insight EDA:* la relación más fuerte es **`credit_amount` ↔ `duration_in_month`** (Pearson/Spearman ~0.625). Tiene sentido económico: créditos mayores suelen requerir más meses de pago.
+
+---
+
+## 5) Estructura del repositorio
+
+```
+.
+├── Analisis-comparativo-modelo-clasificacion.ipynb
+├── Analisis-comparativo-modelo-regresion.ipynb
+└── README.md  ← (este archivo)
 ```
 
 ---
 
-## Ejecutar el Notebook
+## 6) Requisitos e instalación
 
-1. Clonar el repositorio:
+**Python 3.10+** recomendado. Paquetes clave usados en los notebooks:
 
-```bash
-git clone https://github.com/diadasiachilensis/data-science.git
-```
+- `pandas`, `numpy`
+- `scikit-learn` (modelado, métricas, validación)
+- `scipy` / `statsmodels` (pruebas estadísticas)
+- `matplotlib`, `seaborn` (gráficos)
+- `skopt` (en el notebook de regresión se menciona para *Bayesian search*)
 
-2. Navegar a la carpeta del proyecto:
-
-```bash
-cd data-science/machine-learning/Analisis-comparativo
-```
-
-3. Abrir el notebook en Jupyter o VS Code:
+Instala con:
 
 ```bash
-jupyter notebook solemne2.ipynb
+pip install -U pandas numpy scikit-learn scipy statsmodels matplotlib seaborn scikit-optimize
 ```
+
+> Si requieres **reproducibilidad exacta**, crea un entorno virtual y congela dependencias:
+> ```bash
+> python -m venv .venv
+> source .venv/bin/activate  # (Windows: .venv\Scripts\activate)
+> pip install -r requirements.txt  # si generas este archivo
+> ```
+
+---
+
+## 7) Cómo ejecutar
+
+1. Clona/descarga el repo.
+2. Abre los notebooks con Jupyter o VS Code:
+   ```bash
+   jupyter lab
+   # o
+   jupyter notebook
+   ```
+3. Ejecuta cada celda en orden.  
+   - El notebook de **clasificación** muestra EDA → preparación → validación estratificada → ajuste de umbral → reporte de métricas y recomendaciones.  
+   - El notebook de **regresión** muestra EDA → preparación → evaluación con KFold → comparación de modelos.
+
+---
+
+## 8) Decisiones técnicas y buenas prácticas
+
+- **Desbalance** (clasificación): uso de `class_weight='balanced'` y **optimización de umbral** con curvas PR/ROC para alinear la métrica de negocio (minimizar FN).
+- **Escalado**: comparación entre `StandardScaler`, `RobustScaler`, `MinMaxScaler` según sensibilidad del algoritmo; SVM/SVR requieren escalado consistente.
+- **Codificación de categóricas**: OHE para nominales; Label Encoding o mapeos para ordinales.
+- **Validación**: `KFold` / `StratifiedKFold` para estimar rendimiento fuera de muestra; *reportar test* por separado.
+- **Explicabilidad**: cuando el modelo es caja negra (p. ej., SVM RBF), se recomienda agregar **coeficientes/log-odds** (en LogReg), o **SHAP**/permutaciones (futuro) para *feature importance*.
+
+---
+
+## 9) Limitaciones y trabajo futuro
+
+- **Feature engineering** adicional: interacciones, transformaciones no lineales, *binning* de montos/edades, variables de estabilidad laboral, etc.
+- **Tuning sistemático**: `GridSearchCV`/`BayesSearchCV` con espacios de hiperparámetros mejor definidos (especialmente para SVM/SVR).
+- **Curvas de costo**: incorporar **cost-sensitive learning** (matriz de costos) para el negocio crediticio.
+- **Modelos extra**: *Tree ensembles* (Random Forest, Gradient Boosting, XGBoost/LightGBM) y calibración de probabilidades.
+- **Explicabilidad global/local**: SHAP/LIME para decisiones individuales y *feature attributions*.
+
+---
+
+## 10) Licencia y uso de datos
+
+- **Datos**: German Credit Dataset (UCI Statlog). Revise condiciones de uso de la UCI Machine Learning Repository.  
+- **Código**: si no se especifica, se sugiere licenciar bajo **MIT** o similar (agrega `LICENSE` según preferencia).
+
+---
+
+## 11) Contacto
+
+Para dudas, mejoras o colaboración, abre un *issue* o *pull request* en el repositorio correspondiente.
+
+--- 
+
+> **Resumen ejecutivo**
+> - **Clasificación:** SVM (RBF + umbral) logra el **mejor balance** (Recall≈0.67, F1≈0.64, ROC-AUC~0.80) para capturar morosos; LogReg es la alternativa **más interpretable** (ROC-AUC~0.74).  
+> - **Regresión:** **Regresión Lineal** domina (MAE≈1301, RMSE≈1867, R²≈0.56).  
+> - **EDA relevante:** la correlación más fuerte es **monto ↔ duración**, consistente con el dominio financiero.
