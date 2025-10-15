@@ -1,3 +1,4 @@
+```bash 
 data-science/
 ├── README.md
 ├── estadistica/
@@ -42,8 +43,10 @@ data-science/
     ├── funciones_pca.py
     ├── funciones_dea.py
     └── helpers_ml.py
+```
 
----
+
+```bash
 
 data-science/
 ├── README.md
@@ -92,3 +95,4 @@ data-science/
 ├── utils/
 │   └── funciones_generales.py
 └── requirements.txt
+```
