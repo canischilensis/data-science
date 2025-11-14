@@ -1,3 +1,5 @@
+```{r}
+
 library(readxl)
 
 # Read the Excel file
@@ -5,3 +7,4 @@ data <- read_excel("./data/raw_customer_satisfaction_data.xlsx")
 
 # View the first few rows
 head(data)
+```
