@@ -1,0 +1,1369 @@
+---
+title: "Grupo Numero 9 - Proyecto Final"
+output: html_document
+date: "2025-12-11"
+---
+
+## Paquetes que utilizaremos y carga de datos
+
+Paquetes:
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+library(tidyverse)
+library(nortest) #Para el test de Anderson-Darling
+library(car)
+library(lmtest)
+library(dplyr)
+library(ggplot2)
+library(scales)
+```
+
+Carga de datos y metadatos:
+
+```{r}
+datos <- read_excel("G:/Mi unidad/UNAB/2025/3T/analisis de datos/proyecto ADD/Retail_Sales (1).xlsx", sheet = "datos")
+metadatos <- read_excel("G:/Mi unidad/UNAB/2025/3T/analisis de datos/proyecto ADD/Retail_Sales (1).xlsx", sheet = "metadatos")
+```
+
+
+***************************************************************************************************************************************************
+Análisis Exploratorio de Datos
+
+## A. Vista general de los datos
+
+```{r}
+str(datos)
+summary(datos)
+```
+
+## B. Tablas de frecuencia para variables categóricas
+
+```{r}
+table(datos$Tienda)
+prop.table(table(datos$Tienda))
+
+table(datos$Es_Navidad)
+prop.table(table(datos$Es_Navidad))
+
+```
+
+
+## C. Distribución general de Total_Ventas
+
+```{r}
+ggplot(datos, aes(x = Total_Ventas)) +
+  geom_histogram(bins = 30, alpha = 0.6, fill = "steelblue") +
+  geom_vline(aes(xintercept = mean(Total_Ventas, na.rm = TRUE)),
+             linetype = "dashed", linewidth = 1, color = "red") +
+  geom_vline(aes(xintercept = median(Total_Ventas, na.rm = TRUE)),
+             linetype = "dotted", linewidth = 1, color = "darkgreen") +
+  scale_x_continuous(labels = scales::comma) +
+  scale_y_continuous(
+    limits = c(0, 52),
+    breaks = seq(0, 52, by = 5),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Distribución de las Ventas Totales",
+    x = "Ventas Totales",
+    y = "Número de semanas"
+  ) +
+  theme_minimal()
+```
+
+
+## D. Total_Ventas por tienda
+
+
+```{r}
+ventas_por_tienda <- datos %>%
+  group_by(Tienda) %>%
+  summarise(media_ventas = mean(Total_Ventas, na.rm = TRUE))
+
+ggplot(ventas_por_tienda, aes(x = Tienda, y = media_ventas)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +
+  geom_text(aes(label = comma(round(media_ventas, 0))),
+            vjust = -0.5, size = 4) +
+  scale_y_continuous(labels = comma,
+                     limits = c(0, max(ventas_por_tienda$media_ventas) * 1.25)) +
+  labs(
+    title = "Ventas Semanales Promedio por Tienda",
+    x = "Tienda",
+    y = "Ventas Totales Promedio (por semana)"
+  ) +
+  theme_minimal()
+```
+
+
+## E – Distribución de Total_Ventas por tienda
+
+```{r}
+datos <- datos %>%
+  mutate(
+    Tienda = factor(
+      Tienda,
+      levels = c(1, 2, 3, 4),
+      labels = c("Múnich", "Dubái", "Londres", "Nueva York")
+    )
+  )
+
+medias_tienda <- datos %>%
+  group_by(Tienda) %>%
+  summarise(media_ventas = mean(Total_Ventas, na.rm = TRUE))
+
+
+ggplot(datos, aes(x = Total_Ventas)) +
+  geom_histogram(bins = 15, alpha = 0.7, fill = "steelblue") +
+  # Línea vertical de la media por tienda
+  geom_vline(
+    data = medias_tienda,
+    aes(xintercept = media_ventas),
+    linetype = "dashed",
+    linewidth = 0.9,
+    color = "red"
+  ) +
+  scale_x_continuous(labels = comma) +
+  labs(
+    title = "Distribución de las Ventas Totales por Tienda",
+    x = "Ventas Totales (por semana)",
+    y = "Número de semanas"
+  ) +
+  facet_wrap(~ Tienda) +
+  theme_minimal()
+
+
+```
+
+
+
+## F. Relación entre CPI y Total_Ventas
+
+```{r}
+ggplot(datos, aes(x = CPI, y = Total_Ventas)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, color = "red") +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "Relación entre CPI y Ventas Totales",
+    x = "CPI (Índice de Precios al Consumidor)",
+    y = "Ventas Totales (por semana)"
+  ) +
+  theme_minimal()
+
+```
+
+## G. Relación entre Desempleo y Total_Ventas
+
+```{r}
+
+ggplot(datos, aes(x = Desempleo, y = Total_Ventas)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, color = "red") +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "Relación entre Desempleo y Ventas Totales",
+    x = "Tasa de desempleo",
+    y = "Ventas Totales (por semana)"
+  ) +
+  theme_minimal()
+```
+
+H. Relación entre Temperatura y Total_Ventas
+
+```{r}
+ggplot(datos, aes(x = Temperatura, y = Total_Ventas)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, color = "red") +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "Relación entre Temperatura y Ventas Totales",
+    x = "Temperatura promedio (°F)",
+    y = "Ventas Totales (por semana)"
+  ) +
+  theme_minimal()
+```
+
+## I. Ventas promedio según semana festiva (Es_Navidad)
+
+```{r}
+datos <- datos %>%
+  mutate(
+    Es_Navidad = factor(
+      Es_Navidad,
+      levels = c(FALSE, TRUE),
+      labels = c("No festiva", "Festiva")
+    )
+  )
+
+# Resumen de ventas promedio por tipo de semana
+ventas_festivo <- datos %>%
+  group_by(Es_Navidad) %>%
+  summarise(
+    media_ventas = mean(Total_Ventas, na.rm = TRUE),
+    n_semanas    = n()
+  )
+
+ventas_festivo
+
+# Gráfico de barras
+ggplot(ventas_festivo, aes(x = Es_Navidad, y = media_ventas)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +
+  geom_text(
+    aes(label = comma(round(media_ventas, 0))),
+    vjust = -0.5,
+    size  = 4
+  ) +
+  scale_y_continuous(
+    labels = comma,
+    limits = c(0, max(ventas_festivo$media_ventas) * 1.25)
+  ) +
+  labs(
+    title = "Ventas Semanales Promedio según si la semana es festiva o no",
+    x = "Tipo de semana",
+    y = "Ventas Totales Promedio (por semana)"
+  ) +
+  theme_minimal()
+```
+
+
+***************************************************************************************************************************************************
+PREGUNTAS
+***************************************************************************************************************************************************
+
+```{r}
+# ==============================================================================
+# PRUEBA DESCRIPTIVA DE HIPÓTESIS: VENTAS TOTALES VS. $3,000,000
+# CÓDIGO FINAL PARA ARCHIVO EXCEL (.xlsx)
+# ==============================================================================
+
+# 0. ASEGÚRESE DE HABER INSTALADO Y CARGADO EL PAQUETE READXL
+# Si no lo ha hecho: install.packages("readxl")
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS Y RUTA DEL ARCHIVO
+# La ruta se pasa como una sola cadena de texto.
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+UMBRAL_HIPOTESIS <- 3000000 
+
+# 2. CARGA DE DATOS DESDE EXCEL
+# Usamos read_excel para archivos.xlsx. (Lee la primera hoja por defecto).
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE) 
+
+# 3. CÁLCULO DE LA SUMA TOTAL
+# Calculamos la suma de la columna 'Total_Ventas'.
+ventas_totales_observadas <- sum(df_ventas$Total_Ventas, na.rm = TRUE) [1]
+
+# 4. EVALUACIÓN LÓGICA
+# Se evalúa H₁: Total_Ventas > Umbral.
+h1_confirmada <- ventas_totales_observadas > UMBRAL_HIPOTESIS
+margen <- ventas_totales_observadas - UMBRAL_HIPOTESIS
+
+# 5. REPORTE DE RESULTADOS EN CONSOLA
+cat("========================================================\n")
+cat("VERIFICACIÓN DE OBJETIVO DE VENTAS ANUALES\n")
+cat("========================================================\n")
+cat(sprintf("Umbral Crítico (H₀): $%.2f\n", UMBRAL_HIPOTESIS))
+cat(sprintf("Ventas Totales Observadas: $%.2f\n", ventas_totales_observadas))
+
+if (h1_confirmada) {
+  cat("\nDECISIÓN: RECHAZAR H₀.\n")
+  cat("Conclusión: Las ventas totales SÍ superaron los $3,000,000.\n")
+  cat(sprintf("Superávit: $%.2f\n", margen))
+} else {
+  cat("\nDECISIÓN: NO RECHAZAR H₀.\n")
+  cat("Conclusión: Las ventas totales NO superaron los $3,000,000.\n")
+  cat(sprintf("Déficit: $%.2f\n", abs(margen)))
+}
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PASO 1: DIAGNÓSTICO DE NOMBRES DE COLUMNA
+# ==============================================================================
+
+library(readxl)
+
+# RUTA DEL ARCHIVO EXCEL QUE ESTÁ CAUSANDO PROBLEMAS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+
+# CARGA DE DATOS DESDE EXCEL
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE) 
+
+# IMPRIMIR LOS NOMBRES REALES DE LAS COLUMNAS CARGADAS
+cat("========================================================\n")
+cat("NOMBRES DE COLUMNAS CARGADAS POR R:\n")
+print(names(df_ventas))
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PRUEBA DESCRIPTIVA DE HIPÓTESIS: VENTAS TOTALES VS. $3,000,000
+# *** USANDO COLUMNA CORRECTA: 'total' ***
+# ==============================================================================
+
+# 0. ASEGÚRESE DE HABER INSTALADO Y CARGADO EL PAQUETE READXL
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS Y RUTA DEL ARCHIVO
+# Usamos la ruta y el nombre que nos proporcionó para cargar el dataframe.
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+UMBRAL_HIPOTESIS <- 3000000 
+
+# 2. CARGA DE DATOS DESDE EXCEL
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE) 
+
+##CÁLCULO DE LA SUMA TOTAL
+# *** CORRECCIÓN CRÍTICA: USAMOS df_ventas$total ***
+ventas_totales_observadas <- sum(df_ventas$total, na.rm = TRUE) 
+
+##EVALUACIÓN LÓGICA
+# Se evalúa H₁: Total_Ventas > Umbral.
+h1_confirmada <- ventas_totales_observadas > UMBRAL_HIPOTESIS
+margen <- ventas_totales_observadas - UMBRAL_HIPOTESIS
+
+##REPORTE DE RESULTADOS EN CONSOLA
+cat("========================================================\n")
+cat("VERIFICACIÓN DE OBJETIVO DE VENTAS ANUALES\n")
+cat("========================================================\n")
+cat(sprintf("Umbral Crítico (H₀): $%.2f\n", UMBRAL_HIPOTESIS))
+cat(sprintf("Ventas Totales Observadas: $%.2f\n", ventas_totales_observadas))
+
+if (h1_confirmada) {
+  cat("\nDECISIÓN: RECHAZAR H₀.\n")
+  cat("Conclusión: Las ventas totales SÍ superaron los $3,000,000.\n")
+  cat(sprintf("Superávit: $%.2f\n", margen))
+} else {
+  cat("\nDECISIÓN: NO RECHAZAR H₀.\n")
+  cat("Conclusión: Las ventas totales NO superaron los $3,000,000.\n")
+  cat(sprintf("Déficit: $%.2f\n", abs(margen)))
+}
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: PROMEDIO DE VENTAS VS. $20,000 (T-TEST UNILATERAL)
+# H₀: μ ≤ 20.000 (El promedio no supera $20k)
+# H₁: μ > 20.000 (El promedio sí supera $20k)
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES (NECESARIO PARA leer_excel)
+library(readxl)
+
+##DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+MU_HIPOTESIS <- 20000 # Media hipotetizada (20,000)
+ALFA <- 0.05         # Nivel de significancia
+
+##CARGA DE DATOS (Usando la columna 'total' que identificamos previamente)
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+##EJECUCIÓN DE LA PRUEBA T UNILATERAL
+# Utilizamos 'alternative = "greater"' para probar H₁: μ > 20000. [1]
+resultado_t <- t.test(
+  df_ventas$total, 
+  mu = MU_HIPOTESIS, 
+  alternative = "greater" 
+)
+
+##EXTRACCIÓN Y DECISIÓN ESTADÍSTICA
+p_valor <- resultado_t$p.value
+media_observada <- resultado_t$estimate
+t_estadistico <- resultado_t$statistic
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: PROMEDIO DE VENTAS VS. $20,000\n")
+cat("========================================================\n")
+cat(sprintf("Media Hipotetizada (μ₀): $%.2f\n", MU_HIPOTESIS))
+cat(sprintf("Media Muestral Observada (x̄): $%.2f\n", media_observada))
+cat(sprintf("Estadístico t: %.4f\n", t_estadistico))
+cat(sprintf("Valor P: %.5f\n", p_valor))
+cat(sprintf("Nivel de Significancia (α): %.2f\n", ALFA))
+
+# Decisión basada en el valor P
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: La media de ventas SÍ es significativamente mayor a $20,000.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: No hay evidencia estadística suficiente de que la media de ventas supere los $20,000.\n")
+}
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: VARIANZA DE VENTAS VS. $10,000 (CHI-CUADRADO)
+# H₀: σ ≤ 10.000  (σ² ≤ 100,000,000)
+# H₁: σ > 10.000  (σ² > 100,000,000)
+# ==============================================================================
+
+# 0. INSTALACIÓN Y CARGA DE PAQUETES
+# Si no tiene EnvStats instalado, ejecute: install.packages("EnvStats")
+library(readxl)
+library(EnvStats) # Necesario para la función varTest
+
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+SIGMA_HIPOTESIS <- 10000        # Desviación estándar hipotetizada
+SIGMA_SQUARED_HIPOTESIS <- SIGMA_HIPOTESIS^2 # Varianza hipotetizada (100,000,000)
+ALFA <- 0.05                   # Nivel de significancia
+
+# 2. CARGA DE DATOS (Usando la columna 'total')
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# Usamos varTest sobre la columna 'total'.
+# 'sigma.squared' toma el valor de la varianza hipotetizada.
+# 'alternative = "greater"' prueba H₁: σ² > σ₀².
+resultado_var <- varTest(
+  df_ventas$total, 
+  sigma.squared = SIGMA_SQUARED_HIPOTESIS, 
+  alternative = "greater" 
+)
+
+p_valor <- resultado_var$p.value
+varianza_observada <- resultado_var$estimate
+sd_observada <- sqrt(varianza_observada)
+chi_estadistico <- resultado_var$statistic
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: VARIANZA DE VENTAS VS. $10,000\n")
+cat("========================================================\n")
+cat(sprintf("DS Hipotetizada (σ₀): $%.2f\n", SIGMA_HIPOTESIS))
+cat(sprintf("DS Muestral Observada (s): $%.2f\n", sd_observada))
+cat(sprintf("Varianza Hipotetizada (σ₀²): %.2f\n", SIGMA_SQUARED_HIPOTESIS))
+cat(sprintf("Varianza Muestral Observada (s²): %.2f\n", varianza_observada))
+cat(sprintf("Estadístico Chi-Cuadrado (X²): %.4f\n", chi_estadistico))
+cat(sprintf("Valor P: %.5f\n", p_valor))
+cat(sprintf("Nivel de Significancia (α): %.2f\n", ALFA))
+
+# Decisión basada en el valor P
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: La variabilidad típica de las ventas SÍ es significativamente mayor a $10,000.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: No hay evidencia estadística de que la variabilidad supere los $10,000.\n")
+}
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: IGUALDAD DE MEDIAS ENTRE CUATRO TIENDAS (ANOVA)
+# H₀: μ₁ = μ₂ = μ₃ = μ₄ (El promedio de ventas es igual en las cuatro tiendas)
+# H₁: Al menos un μ difiere (Al menos una tienda tiene ventas promedio distintas)
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS (Se asume que la columna de tienda se llama 'Tienda')
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. PREPARACIÓN DE DATOS
+# Convertir la columna 'Tienda' a factor, lo cual es obligatorio para ANOVA.
+# Si su columna de grupo se llama 'branch' o 'city', AJUSTE aquí:
+df_ventas$Tienda <- as.factor(df_ventas$Tienda)
+
+# 4. EJECUCIÓN DEL ANOVA
+# Utilizamos la función aov() con la fórmula: total ~ Tienda
+resultado_anova <- aov(total ~ Tienda, data = df_ventas)
+
+# 5. RESUMEN DE RESULTADOS Y EXTRACCIÓN DEL VALOR P
+resumen_anova <- summary(resultado_anova)
+# Extraemos el valor P de la tabla ANOVA para el factor 'Tienda'
+p_valor <- resumen_anova[[1]]$'Pr(>F)'[1] 
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: ANOVA de Ventas por Tienda\n")
+cat("========================================================\n")
+print(resumen_anova) # Imprime la tabla completa de ANOVA
+
+# 6. DECISIÓN ESTADÍSTICA
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: Existe evidencia (p < %.5f) de que el promedio de ventas difiere significativamente entre al menos una de las tiendas.\n", p_valor))
+  cat("Siguiente paso: Aplicar pruebas post-hoc (ej. TukeyHSD) para identificar los pares de tiendas específicas que son diferentes.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: No existe evidencia estadística suficiente (p = %.5f) para afirmar que el promedio de ventas difiere entre las cuatro tiendas.\n", p_valor))
+}
+cat("========================================================\n")
+```
+
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: IGUALDAD DE MEDIAS ENTRE TIENDAS (ANOVA)
+# *** USANDO LA COLUMNA CORRECTA: 'city' ***
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. PREPARACIÓN DE DATOS (CORRECCIÓN APLICADA AQUÍ)
+# Convertir la columna 'city' a factor, ya que representa las categorías (tiendas).
+# Si el análisis fuera por 'branch', cambiar 'city' por 'branch'.
+df_ventas$city <- as.factor(df_ventas$city)
+
+# 4. EJECUCIÓN DEL ANOVA
+# Fórmula: total ~ city (Ventas totales explicadas por la ciudad)
+resultado_anova <- aov(total ~ city, data = df_ventas) 
+
+# 5. RESUMEN DE RESULTADOS Y EXTRACCIÓN DEL VALOR P
+resumen_anova <- summary(resultado_anova)
+# Extraemos el valor P de la tabla ANOVA para el factor 'city'
+p_valor <- resumen_anova[[1]]$'Pr(>F)'[1] 
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: ANOVA de Ventas por Tienda (city)\n")
+cat("========================================================\n")
+print(resumen_anova) # Imprime la tabla completa de ANOVA
+
+# 6. DECISIÓN ESTADÍSTICA
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: Existe evidencia (p < %.5f) de que el promedio de ventas difiere significativamente entre al menos una de las tiendas.\n", p_valor))
+  cat("Siguiente paso: Aplicar pruebas post-hoc (ej. TukeyHSD) para identificar los pares de tiendas específicas que son diferentes.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: No existe evidencia estadística suficiente (p = %.5f) para afirmar que el promedio de ventas difiere entre las cuatro tiendas.\n", p_valor))
+}
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: IGUALDAD DE MEDIAS DE VENTAS ENTRE DEPARTAMENTOS (ANOVA)
+# H₀: μ₁ = μ₂ = μ₃ = μ₄ = μ₅ (Ventas promedio son iguales entre 5 departamentos)
+# H₁: Al menos un μ difiere
+# ==============================================================================
+
+# 0. INSTALACIÓN Y CARGA DE PAQUETES
+# Si no tiene 'tidyverse' instalado, ejecute: install.packages("tidyverse")
+library(readxl)
+library(tidyverse) 
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+df_ventas_wide <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. REESTRUCTURACIÓN DE DATOS A FORMATO LARGO (PIVOTE)
+# Se toman las cinco columnas de departamento y se pivotean a dos columnas:
+# 'Departamento' (nombre del depto) y 'Ventas_Depto' (el valor de venta).
+df_ventas_long <- df_ventas_wide %>%
+  pivot_longer(
+    cols = starts_with("Depto_"), # Selecciona las columnas que comienzan con 'Depto_'
+    names_to = "Departamento",     # Nueva columna para el nombre del departamento
+    values_to = "Ventas_Depto"     # Nueva columna para el valor de la venta
+  )
+
+# 4. EJECUCIÓN DEL ANOVA
+# Fórmula: Ventas_Depto ~ Departamento (Ventas explicadas por el factor Departamento)
+# El ANOVA compara las medias de la columna 'Ventas_Depto' a través de los grupos en 'Departamento'.
+resultado_anova <- aov(Ventas_Depto ~ Departamento, data = df_ventas_long)
+
+# 5. RESUMEN DE RESULTADOS Y EXTRACCIÓN DEL VALOR P
+resumen_anova <- summary(resultado_anova)
+p_valor <- resumen_anova[[1]]$'Pr(>F)'[1] 
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: ANOVA de Ventas entre Departamentos\n")
+cat("========================================================\n")
+print(resumen_anova) # Imprime la tabla completa de ANOVA
+
+# 6. DECISIÓN ESTADÍSTICA
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: Existe evidencia (p < %.5f) de que el promedio de ventas de liquidación difiere significativamente entre al menos uno de los cinco departamentos.\n", p_valor))
+  cat("Siguiente paso: Aplicar pruebas post-hoc (ej. TukeyHSD) para identificar qué pares de departamentos son específicos que son diferentes.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: No existe evidencia estadística suficiente (p = %.5f) para afirmar que el promedio de ventas de liquidación difiere entre los cinco departamentos.\n", p_valor))
+}
+cat("========================================================\n")
+```
+
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: IGUALDAD DE MEDIAS DE VENTAS ENTRE LÍNEAS DE PRODUCTO (ANOVA)
+# H₀: Las ventas promedio son iguales entre las líneas de producto (product.line).
+# H₁: Al menos una línea de producto presenta ventas diferentes.
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+# library(tidyverse) # NO es necesario si no usamos pivot_longer.
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. PREPARACIÓN DE DATOS
+# 3.1 Convertir la columna de ventas a numérica (columna 'total').
+df_ventas$total <- as.numeric(df_ventas$total)
+
+# 3.2 Convertir la columna de categorías ('product.line') a factor, esencial para ANOVA.
+# La columna 'product.line' contiene los distintos grupos a comparar.
+df_ventas$product.line <- as.factor(df_ventas$product.line)
+
+# 4. EJECUCIÓN DEL ANOVA
+# Fórmula: total ~ product.line (Ventas totales explicadas por la línea de producto)
+resultado_anova <- aov(total ~ product.line, data = df_ventas) 
+
+# 5. RESUMEN DE RESULTADOS Y EXTRACCIÓN DEL VALOR P
+resumen_anova <- summary(resultado_anova)
+p_valor <- resumen_anova[[1]]$'Pr(>F)'[1] 
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: ANOVA de Ventas por Línea de Producto\n")
+cat("========================================================\n")
+print(resumen_anova) # Imprime la tabla completa de ANOVA
+
+# 6. DECISIÓN ESTADÍSTICA
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: Existe evidencia (p < %.5f) de que el promedio de ventas difiere significativamente entre al menos una de las líneas de producto.\n", p_valor))
+  cat("Siguiente paso: Aplicar pruebas post-hoc (ej. TukeyHSD) para identificar las líneas específicas que son diferentes.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat(sprintf("Conclusión: No existe evidencia estadística suficiente (p = %.5f) para afirmar que el promedio de ventas difiere entre las líneas de producto.\n", p_valor))
+}
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: IGUALDAD DE MEDIAS (SEMANAS FESTIVAS VS. NO FESTIVAS)
+# H₀: μ_festivo = μ_no_festivo (Las ventas promedio son iguales)
+# H₁: μ_festivo ≠ μ_no_festivo (Las ventas promedio difieren)
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. PREPARACIÓN DE DATOS
+# 3.1 Convertir la variable de factor de ventas a numérica (columna 'total').
+df_ventas$total <- as.numeric(df_ventas$total)
+
+# 3.2 La variable 'Es_Navidad' (o equivalente) es el factor de agrupación.
+# Asumiendo que su columna se llama 'Es_Navidad' (como en el archivo original)
+# Si su archivo usa 'EsNavidad', por favor cambie la línea 3.3.
+df_ventas$Es_Navidad <- as.factor(df_ventas$Es_Navidad) 
+
+# 4. EJECUCIÓN DE LA PRUEBA T DE MUESTRAS INDEPENDIENTES
+# Fórmula: total ~ Es_Navidad (Ventas totales explicadas por el factor festivo/no festivo)
+# La opción 'alternative = "two.sided"' (por defecto) prueba la diferencia (H₁: ≠).
+resultado_t_independiente <- t.test(total ~ Es_Navidad, data = df_ventas, 
+                                    alternative = "two.sided", 
+                                    var.equal = FALSE) # Asume varianzas desiguales (robusto)
+
+# 5. EXTRACCIÓN Y DECISIÓN ESTADÍSTICA
+p_valor <- resultado_t_independiente$p.value
+media_festiva <- resultado_t_independiente$estimate[1]
+media_no_festiva <- resultado_t_independiente$estimate[2]
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: T-Test (Semanas Festivas vs. No Festivas)\n")
+cat("========================================================\n")
+cat(sprintf("Media Semanas No Festivas: $%.2f\n", media_no_festiva))
+cat(sprintf("Media Semanas Festivas: $%.2f\n", media_festiva))
+cat(sprintf("Diferencia de Medias: $%.2f\n", media_festiva - media_no_festiva))
+cat(sprintf("Estadístico t: %.4f\n", resultado_t_independiente$statistic))
+cat(sprintf("Valor P: %.5f\n", p_valor))
+cat(sprintf("Nivel de Significancia (α): %.2f\n", ALFA))
+
+# Decisión basada en el valor P
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: Las ventas totales promedio SÍ difieren significativamente entre semanas festivas y no festivas.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: No hay evidencia estadística suficiente para afirmar que las ventas promedio difieren entre semanas festivas y no festivas.\n")
+}
+cat("========================================================\n")
+```
+
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: IGUALDAD DE MEDIAS (SEMANAS FESTIVAS VS. NO FESTIVAS)
+# H₀: μ_festivo = μ_no_festivo (Las ventas promedio son iguales)
+# H₁: μ_festivo ≠ μ_no_festivo (Las ventas promedio difieren)
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. PREPARACIÓN DE DATOS
+# 3.1 Convertir la variable de ventas a numérica (columna 'total').
+df_ventas$total <- as.numeric(df_ventas$total)
+
+# 3.2 CORRECCIÓN: Se asume que la variable de días festivos se llama 'EsNavidad'.
+# Si el nombre es diferente (ej. 'Festivo'), AJUSTE aquí.
+df_ventas$EsNavidad <- as.factor(df_ventas$EsNavidad) 
+
+# 4. EJECUCIÓN DE LA PRUEBA T DE MUESTRAS INDEPENDIENTES
+# Fórmula: total ~ EsNavidad (Ventas totales explicadas por el factor festivo/no festivo)
+# Se utiliza var.equal = FALSE (Corrección de Welch) para mayor robustez.
+resultado_t_independiente <- t.test(total ~ EsNavidad, data = df_ventas, 
+                                    alternative = "two.sided", 
+                                    var.equal = FALSE) 
+
+# 5. EXTRACCIÓN Y DECISIÓN ESTADÍSTICA
+p_valor <- resultado_t_independiente$p.value
+media_festiva <- resultado_t_independiente$estimate[1]
+media_no_festiva <- resultado_t_independiente$estimate[2]
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: T-Test (Semanas Festivas vs. No Festivas)\n")
+cat("========================================================\n")
+cat(sprintf("Media Semanas No Festivas: $%.2f\n", media_no_festiva))
+cat(sprintf("Media Semanas Festivas: $%.2f\n", media_festiva))
+cat(sprintf("Diferencia de Medias: $%.2f\n", media_festiva - media_no_festiva))
+cat(sprintf("Estadístico t: %.4f\n", resultado_t_independiente$statistic))
+cat(sprintf("Valor P: %.5f\n", p_valor))
+cat(sprintf("Nivel de Significancia (α): %.2f\n", ALFA))
+
+# Decisión basada en el valor P
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: Las ventas totales promedio SÍ difieren significativamente entre semanas festivas y no festivas.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: No hay evidencia estadística suficiente para afirmar que las ventas promedio difieren entre semanas festivas y no festivas.\n")
+}
+cat("========================================================\n")
+```
+
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: IGUALDAD DE MEDIAS (SEMANAS FESTIVAS VS. NO FESTIVAS)
+# H₀: μ_festivo = μ_no_festivo 
+# H₁: μ_festivo ≠ μ_no_festivo 
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. PREPARACIÓN DE DATOS
+# 3.1 Convertir la variable de ventas a numérica (columna 'total').
+df_ventas$total <- as.numeric(df_ventas$total)
+
+# 3.2 CORRECCIÓN: Se utiliza 'Es_Navidad' (con guion bajo).
+# ESTA ES LA CORRECCIÓN CLAVE.
+df_ventas$Es_Navidad <- as.factor(df_ventas$Es_Navidad) 
+
+# 4. EJECUCIÓN DE LA PRUEBA T DE MUESTRAS INDEPENDIENTES
+# Fórmula: total ~ Es_Navidad (Ventas totales explicadas por el factor festivo/no festivo)
+# Se utiliza var.equal = FALSE (Corrección de Welch) para mayor robustez.
+resultado_t_independiente <- t.test(total ~ Es_Navidad, data = df_ventas, 
+                                    alternative = "two.sided", 
+                                    var.equal = FALSE) 
+
+# 5. EXTRACCIÓN Y DECISIÓN ESTADÍSTICA
+p_valor <- resultado_t_independiente$p.value
+media_festiva <- resultado_t_independiente$estimate[1]
+media_no_festiva <- resultado_t_independiente$estimate[2]
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: T-Test (Semanas Festivas vs. No Festivas)\n")
+cat("========================================================\n")
+cat(sprintf("Media Semanas No Festivas: $%.2f\n", media_no_festiva))
+cat(sprintf("Media Semanas Festivas: $%.2f\n", media_festiva))
+cat(sprintf("Diferencia de Medias: $%.2f\n", media_festiva - media_no_festiva))
+cat(sprintf("Estadístico t: %.4f\n", resultado_t_independiente$statistic))
+cat(sprintf("Valor P: %.5f\n", p_valor))
+cat(sprintf("Nivel de Significancia (α): %.2f\n", ALFA))
+
+# Decisión basada en el valor P
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: Las ventas totales promedio SÍ difieren significativamente entre semanas festivas y no festivas.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: No hay evidencia estadística suficiente para afirmar que las ventas promedio difieren entre semanas festivas y no festivas.\n")
+}
+cat("========================================================\n")
+```
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: T-Test (SEMANAS FESTIVAS VS. NO FESTIVAS)
+# H₀: μ_festivo = μ_no_festivo 
+# H₁: μ_festivo ≠ μ_no_festivo 
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+
+# 1. DEFINICIÓN DE PARÁMETROS
+NOMBRE_ARCHIVO <- "C:/Users/Usuario/Downloads/datos_intermedio (3).xlsx"
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+df_ventas <- read_excel(NOMBRE_ARCHIVO, sheet = 1, col_names = TRUE)
+
+# 3. PREPARACIÓN DE DATOS
+# 3.1 Convertir la variable de ventas a numérica (columna 'total').
+df_ventas$total <- as.numeric(df_ventas$total)
+
+# 3.2 CORRECCIÓN: **REEMPLAZAR "NOMBRE_COLUMNA_FESTIVA" CON EL NOMBRE REAL ENCONTRADO**
+df_ventas$FactorFestivo <- as.factor(df_ventas$NOMBRE_COLUMNA_FESTIVA) 
+
+# 4. EJECUCIÓN DE LA PRUEBA T DE MUESTRAS INDEPENDIENTES
+# La fórmula usa el nuevo factor: total ~ FactorFestivo
+resultado_t_independiente <- t.test(total ~ FactorFestivo, data = df_ventas, 
+                                    alternative = "two.sided", 
+                                    var.equal = FALSE) 
+
+# 5. EXTRACCIÓN Y DECISIÓN ESTADÍSTICA
+p_valor <- resultado_t_independiente$p.value
+media_festiva <- resultado_t_independiente$estimate[1]
+media_no_festiva <- resultado_t_independiente$estimate[2]
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: T-Test (Semanas Festivas vs. No Festivas)\n")
+cat("========================================================\n")
+cat(sprintf("Media Semanas No Festivas: $%.2f\n", media_no_festiva))
+cat(sprintf("Media Semanas Festivas: $%.2f\n", media_festiva))
+cat(sprintf("Diferencia de Medias: $%.2f\n", media_festiva - media_no_festiva))
+cat(sprintf("Estadístico t: %.4f\n", resultado_t_independiente$statistic))
+cat(sprintf("Valor P: %.5f\n", p_valor))
+cat(sprintf("Nivel de Significancia (α): %.2f\n", ALFA))
+
+# Decisión basada en el valor P
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: Las ventas totales promedio SÍ difieren significativamente entre semanas festivas y no festivas.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: No hay evidencia estadística suficiente para afirmar que las ventas promedio difieren entre semanas festivas y no festivas.\n")
+}
+cat("========================================================\n")
+```
+
+```{r}
+# ==============================================================================
+# PRUEBA DE HIPÓTESIS: T-Test (SEMANAS FESTIVAS VS. NO FESTIVAS)
+# H₀: μ_festivo = μ_no_festivo 
+# H₁: μ_festivo ≠ μ_no_festivo 
+# ==============================================================================
+
+# 0. CARGA DE PAQUETES
+library(readxl)
+# NOTA: Si está utilizando el archivo original del proyecto (.csv), use read.csv() en el paso 2.
+
+# 1. DEFINICIÓN DE PARÁMETROS
+# *** AJUSTE ESTA RUTA/NOMBRE SI ESTÁ USANDO UN ARCHIVO DISTINTO AL INTERMEDIO ***
+NOMBRE_ARCHIVO_PROYECTO <- "C:/Users/Usuario/Downloads/Retail_Sales (1) (1).xlsx - Sheet1.csv" 
+ALFA <- 0.05         # Nivel de significancia
+
+# 2. CARGA DE DATOS 
+# Utilizamos read.csv porque el archivo original es un CSV.
+df_ventas <- read.csv(NOMBRE_ARCHIVO_PROYECTO) 
+
+# 3. PREPARACIÓN DE DATOS
+# 3.1 VENTA: Utilizamos el nombre de columna del archivo original: 'Total_Ventas'.
+df_ventas$Total_Ventas <- as.numeric(df_ventas$Total_Ventas)
+
+# 3.2 FACTOR: La variable de grupo es 'Es_Navidad' (TRUE/FALSE).
+df_ventas$Es_Navidad <- as.factor(df_ventas$Es_Navidad) 
+
+# 4. EJECUCIÓN DE LA PRUEBA T DE MUESTRAS INDEPENDIENTES
+# Fórmula: Total_Ventas ~ Es_Navidad
+resultado_t_independiente <- t.test(Total_Ventas ~ Es_Navidad, data = df_ventas, 
+                                    alternative = "two.sided", 
+                                    var.equal = FALSE) 
+
+# 5. EXTRACCIÓN Y DECISIÓN ESTADÍSTICA
+p_valor <- resultado_t_independiente$p.value
+media_festiva <- resultado_t_independiente$estimate[1]
+media_no_festiva <- resultado_t_independiente$estimate[2]
+
+cat("\n========================================================\n")
+cat("ANÁLISIS INFERENCIAL: T-Test (Semanas Festivas vs. No Festivas)\n")
+cat("========================================================\n")
+cat(sprintf("Media Semanas No Festivas: $%.2f\n", media_no_festiva))
+cat(sprintf("Media Semanas Festivas: $%.2f\n", media_festiva))
+cat(sprintf("Diferencia de Medias: $%.2f\n", media_festiva - media_no_festiva))
+cat(sprintf("Estadístico t: %.4f\n", resultado_t_independiente$statistic))
+cat(sprintf("Valor P: %.5f\n", p_valor))
+cat(sprintf("Nivel de Significancia (α): %.2f\n", ALFA))
+
+# Decisión basada en el valor P
+if (p_valor < ALFA) {
+  cat("\nDecisión: RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: Las ventas totales promedio SÍ difieren significativamente entre semanas festivas y no festivas.\n")
+} else {
+  cat("\nDecisión: NO RECHAZAR LA HIPÓTESIS NULA (H₀).\n")
+  cat("Conclusión: No hay evidencia estadística suficiente para afirmar que las ventas promedio difieren entre semanas festivas y no festivas.\n")
+}
+cat("========================================================\n")
+```
+
+
+
+
+## PREGUNTA 6. (simple): semanas festivas vs no festivas
+
+df <- read_excel("Retail_Sales (1).xlsx")
+
+# Asegurar que Es_Navidad sea TRUE/FALSE
+df$Es_Navidad <- as.logical(df$Es_Navidad)
+
+# Prueba t de Welch (por defecto var.equal = FALSE)
+t.test(Total_Ventas ~ Es_Navidad, data = df)
+
+
+## PREGUNTA 7.	¿Comparando las ventas totales promedio entre las tiendas, Múnich fue la tienda con mejor desempeño con más de $10,000 de diferencia?
+
+## Transformando los datos de Tiendas a Factor
+```{r}
+datos <- datos %>%
+  mutate(
+    Tienda = factor(Tienda)
+  )
+
+```
+
+```{r}
+str(datos)
+```
+
+## Medias y desviaciones estándar por tienda (Descriptivo)
+
+
+```{r}
+
+resumen_tiendas <- datos %>%
+  group_by(Tienda) %>%
+  summarise(
+    media_ventas = mean(Total_Ventas, na.rm = TRUE),
+    sd_ventas    = sd(Total_Ventas, na.rm = TRUE),
+    n            = n()
+  )
+
+resumen_tiendas
+
+```
+
+## ANOVA de una vía
+```{r}
+modelo7 <- aov(Total_Ventas ~ Tienda, data = datos)
+summary(modelo7)
+```
+
+
+## comprobamos los supuestos:
+
+
+## Test de Shapiro - Normalidad de los residuos:
+```{r}
+shapiro.test(residuals(modelo7))
+```
+
+## Test de Levene - Homogeneidad de varianzas
+```{r}
+leveneTest(Total_Ventas ~ Tienda, data = datos)
+```
+## Test Post Hoc de Tukey 
+si hay suficiente evidencia para rechazar la Hipótesis nula que establece que las medias de los grupos son iguales, podemos ver que si hay diferencia significativa. Entonces hacemos la prueba Post Hoc.
+
+Esta prueba compara todas las combinaciones de grupo para determinar cuales presentan diferencias significativas. En el fondo comparar y saber cuales medias tienen diferencia significativa
+
+## Test Post Hoc de Tukey 
+```{r}
+TukeyHSD(modelo7)
+```
+
+***********************************************************************************************************************************************************
+
+## PREGUNTA 8 ¿Cómo están relacionados el IPC y las ventas totales del año?
+
+
+## Variable Dependiente: Ventas Totales del Año
+## Variable Independiente: IPC
+
+Ajustamos el Modelo de Regresión Lineal Simple:
+
+```{r}
+modelo8 <- lm(Total_Ventas ~ CPI, data = datos)
+summary(modelo8)
+```
+## Comprobamos los supuestos de un Modelo de Regresion Lineal:
+
+
+## Linealidad (se asume que la relación entre las variables dependientes es lineal en parametros). En este caso el modelo es lineal en parametros.
+
+
+
+## Independencia de los errores (no autocorrelación, un error no explica otro). Aplicamos el test de darling-watson.
+
+```{r}
+dwtest(modelo8)
+```
+
+
+## Homocedasticidad (asume que la varianza del error es constante para todos los valores de X - cuando no hay Homocedasticidad se le conoce como Heterocedasticidad). Usamos el test de Breusch-Pagan.
+
+```{r}
+bptest(modelo8)
+```
+
+
+## Normalidad de los errores (asume que los errores distribuyen normalmente con media 0). Aplicamos el test de Shapiro-Wilk.
+
+```{r}
+shapiro.test(resid(modelo8))
+```
+
+## No colinealidad. Solo aplica para el modelo de regresion multiple.
+
+
+
+**************************************************************************************************************************************************************
+
+## PREGUNTA 9 ¿Cómo están relacionados el Desempleo y las ventas totales del año?
+
+
+## Variable Dependiente: Ventas Totales del Año
+## Variable Independiente: Desempleo
+
+Ajustamos el Modelo de Regresión Lineal Simple:
+
+```{r}
+modelo9 <- lm(Total_Ventas ~ Desempleo, data = datos)
+summary(modelo9)
+```
+
+
+## Comprobamos los supuestos de un Modelo de Regresion Lineal:
+
+
+## Linealidad (se asume que la relación entre las variables dependientes es lineal en parametros). En este caso el modelo es lineal en parametros.
+
+
+## Independencia de los errores (no autocorrelación, un error no explica otro). Aplicamos el test de darling-watson.
+
+```{r}
+dwtest(modelo9)
+```
+
+
+## Homocedasticidad (asume que la varianza del error es constante para todos los valores de X - cuando no hay Homocedasticidad se le conoce como Heterocedasticidad). Usamos el test de Breusch-Pagan.
+
+```{r}
+bptest(modelo9)
+```
+
+
+## Normalidad de los errores (asume que los errores distribuyen normalmente con media 0). Aplicamos el test de Shapiro-Wilk.
+
+```{r}
+shapiro.test(resid(modelo9))
+```
+
+
+## No colinealidad. Solo aplica para el modelo de regresion multiple.
+
+
+*****************************************************************************************************************************************************************
+
+## PREGUNTA 10 ¿Cómo están relacionados la temperatura y las ventas totales del año?
+
+
+## Variable Dependiente: Ventas Totales del Año
+## Variable Independiente: Temperatura
+
+Ajustamos el Modelo de Regresión Lineal Simple:
+
+```{r}
+modelo10 <- lm(Total_Ventas ~ Temperatura, data = datos)
+summary(modelo10)
+```
+
+## Comprobamos los supuestos de un Modelo de Regresion Lineal:
+
+
+## Linealidad (se asume que la relación entre las variables dependientes es lineal en parametros). En este caso el modelo es lineal en parametros.
+
+
+## Independencia de los errores (no autocorrelación, un error no explica otro). Aplicamos el test de darling-watson.
+
+```{r}
+dwtest(modelo10)
+```
+
+## Homocedasticidad (asume que la varianza del error es constante para todos los valores de X - cuando no hay Homocedasticidad se le conoce como Heterocedasticidad). Usamos el test de Breusch-Pagan.
+
+```{r}
+bptest(modelo10)
+```
+
+## Normalidad de los errores (asume que los errores distribuyen normalmente con media 0). Aplicamos el test de Shapiro-Wilk.
+
+```{r}
+shapiro.test(resid(modelo10))
+```
+
+## No colinealidad. Solo aplica para el modelo de regresion multiple.
+
+
+************PREGUNTAS 11 12 13*****************************************
+```{r}
+
+## Carga y preparación del dataset
+
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(broom)
+library(tidyr)
+library(knitr)
+
+df_ventas <- read_excel("Retail_Sales.xlsx")
+
+df_ventas <- df_ventas %>%
+rename(
+Semana = Senaba,
+Es_Navidad = EsNavidad
+) %>%
+mutate(
+Tienda = factor(
+Tienda,
+levels = c(1, 2, 3, 4),
+labels = c("Múnich", "Dubái", "Londres", "Nueva York")
+),
+Es_Navidad = factor(Es_Navidad, levels = c(0, 1), labels = c("No", "Sí"))
+)
+
+stopifnot(nrow(df_ventas) > 0)
+stopifnot(all(c("Total_Ventas","CPI","Desempleo","Temperatura","MarkDown2","MarkDown5","Tienda","Es_Navidad") %in% names(df_ventas)))
+
+head(df_ventas)
+
+
+ggplot(df_ventas, aes(x = Total_Ventas)) +
+geom_histogram(bins = 25) +
+labs(
+title = "Distribución de Ventas Totales (Total_Ventas)",
+x = "Total_Ventas",
+y = "Frecuencia"
+) +
+theme_minimal()
+
+## 0.1 Vista rápida de distribución (contexto visual)
+ggplot(df_ventas, aes(x = Tienda, y = Total_Ventas)) +
+geom_boxplot() +
+labs(
+title = "Ventas Totales por Tienda (boxplot)",
+x = "Tienda",
+y = "Total_Ventas"
+) +
+theme_minimal()
+
+## PREGUNTA11
+##3.11 ¿Es el IPC el mejor predictor vs desempleo y temperatura?
+## 3.11.1 Modelos simples (un predictor)
+  
+  m_cpi  <- lm(Total_Ventas ~ CPI, data = df_ventas)
+m_des  <- lm(Total_Ventas ~ Desempleo, data = df_ventas)
+m_temp <- lm(Total_Ventas ~ Temperatura, data = df_ventas)
+
+tabla_311 <- data.frame(
+Modelo = c("IPC (CPI)", "Desempleo", "Temperatura"),
+R2_Ajustado = c(
+summary(m_cpi)$adj.r.squared,
+summary(m_des)$adj.r.squared,
+summary(m_temp)$adj.r.squared
+),
+AIC = c(AIC(m_cpi), AIC(m_des), AIC(m_temp)),
+p_value = c(
+summary(m_cpi)$coefficients["CPI","Pr(>|t|)"],
+summary(m_des)$coefficients["Desempleo","Pr(>|t|)"],
+summary(m_temp)$coefficients["Temperatura","Pr(>|t|)"]
+)
+)
+
+kable(tabla_311, digits = 4, caption = "Comparación de modelos simples (3.11)")
+
+
+## Gráfico: comparación de R² ajustado y AIC (evidencia visual)
+tabla_long <- tabla_311 %>%
+pivot_longer(cols = c(R2_Ajustado, AIC), names_to = "Métrica", values_to = "Valor")
+
+ggplot(tabla_long, aes(x = Modelo, y = Valor)) +
+geom_col() +
+facet_wrap(~ Métrica, scales = "free_y") +
+labs(
+title = "Comparación visual: R² ajustado y AIC (modelos simples)",
+x = "Modelo",
+y = "Valor"
+) +
+theme_minimal()
+
+
+## 3.11.2 Evidencia visual: relación predictor → ventas (scatter + recta lm)
+
+p1 <- ggplot(df_ventas, aes(x = CPI, y = Total_Ventas)) +
+geom_point(alpha = 0.7) +
+geom_smooth(method = "lm", se = TRUE) +
+labs(title = "Total_Ventas vs CPI (IPC)", x = "CPI", y = "Total_Ventas") +
+theme_minimal()
+
+p2 <- ggplot(df_ventas, aes(x = Desempleo, y = Total_Ventas)) +
+geom_point(alpha = 0.7) +
+geom_smooth(method = "lm", se = TRUE) +
+labs(title = "Total_Ventas vs Desempleo", x = "Desempleo", y = "Total_Ventas") +
+theme_minimal()
+
+p3 <- ggplot(df_ventas, aes(x = Temperatura, y = Total_Ventas)) +
+geom_point(alpha = 0.7) +
+geom_smooth(method = "lm", se = TRUE) +
+labs(title = "Total_Ventas vs Temperatura", x = "Temperatura", y = "Total_Ventas") +
+theme_minimal()
+
+p1
+
+## 3.11.3 Modelo múltiple conjunto
+
+m_all <- lm(Total_Ventas ~ CPI + Desempleo + Temperatura, data = df_ventas)
+summary(m_all)
+
+## 3.11.4 Betas estandarizados (comparables)
+
+m_std <- lm(
+scale(Total_Ventas) ~ scale(CPI) + scale(Desempleo) + scale(Temperatura),
+data = df_ventas
+)
+summary(m_std)
+
+
+## 3.11.5 Colinealidad CPI vs Desempleo
+
+cor(df_ventas$CPI, df_ventas$Desempleo)
+
+ggplot(df_ventas, aes(x = CPI, y = Desempleo)) +
+geom_point(alpha = 0.7) +
+geom_smooth(method = "lm", se = TRUE) +
+labs(
+title = "Colinealidad: CPI vs Desempleo (tendencia lineal)",
+x = "CPI",
+y = "Desempleo"
+) +
+theme_minimal()
+
+
+##3.12 ¿Es Múnich la tienda con mejor desempeño en “Menaje”?
+## 3.12.1 Descriptivo (promedio por tienda)
+
+tabla_menaje <- df_ventas %>%
+group_by(Tienda) %>%
+summarise(
+media = mean(MarkDown2),
+sd = sd(MarkDown2),
+n = n(),
+.groups = "drop"
+) %>%
+arrange(desc(media))
+
+kable(tabla_menaje, digits = 2, caption = "Menaje (MarkDown2) por tienda: descriptivo (3.12)")
+
+## 3.12.2 Evidencia visual (boxplot + puntos)
+
+ggplot(df_ventas, aes(x = Tienda, y = MarkDown2)) +
+geom_boxplot() +
+geom_jitter(width = 0.15, alpha = 0.5) +
+labs(
+title = "Menaje (MarkDown2) por tienda: boxplot + puntos",
+x = "Tienda",
+y = "MarkDown2 (Menaje)"
+) +
+theme_minimal()
+
+## 3.12.3 Prueba inferencial: Múnich vs resto (Welch, una cola)
+
+munich <- subset(df_ventas, Tienda == "Múnich")$MarkDown2
+otros  <- subset(df_ventas, Tienda != "Múnich")$MarkDown2
+
+t.test(munich, otros, alternative = "greater")
+
+## 3.12.4 Evidencia visual (densidades comparadas)
+
+df_comp <- df_ventas %>%
+mutate(Grupo = ifelse(Tienda == "Múnich", "Múnich", "Otras"))
+
+ggplot(df_comp, aes(x = MarkDown2, fill = Grupo)) +
+geom_density(alpha = 0.4) +
+labs(
+title = "Distribución de Menaje: Múnich vs Otras (densidad)",
+x = "MarkDown2 (Menaje)",
+y = "Densidad"
+) +
+theme_minimal()
+
+
+
+## 3.13 ¿MarkDown5 (Electrónica) predice significativamente las ventas totales?
+## 3.13.1 Modelo directo: Total_Ventas ~ MarkDown5
+
+m1 <- lm(Total_Ventas ~ MarkDown5, data = df_ventas)
+summary(m1)
+
+## Evidencia visual: relación mecánica (incluida en el total)
+ggplot(df_ventas, aes(x = MarkDown5, y = Total_Ventas)) +
+geom_point(alpha = 0.7) +
+geom_smooth(method = "lm", se = TRUE) +
+labs(
+title = "Total_Ventas vs MarkDown5 (Electrónica): relación directa",
+x = "MarkDown5",
+y = "Total_Ventas"
+) +
+theme_minimal()
+
+## 3.13.2 Modelo “honesto” (spillover): ventas excluyendo Electrónica
+
+df_ventas <- df_ventas %>%
+mutate(Total_sin_elec = Total_Ventas - MarkDown5)
+
+m2 <- lm(Total_sin_elec ~ MarkDown5 + Tienda + Es_Navidad, data = df_ventas)
+summary(m2)
+
+##Evidencia visual: relación spillover (si existiera, se vería acá)
+
+ggplot(df_ventas, aes(x = MarkDown5, y = Total_sin_elec)) + geom_point(alpha = 0.7) + geom_smooth(method = “lm”, se = TRUE) + labs( title = “Total_sin_elec vs MarkDown5 (spillover): controlando estructura”, x = “MarkDown5”, y = “Total_sin_elec” ) + theme_minimal()
+
+
+
+```
