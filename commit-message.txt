@@ -1,0 +1,5 @@
+- Create 'estadistica/simulacion-monte-carlo' directory.
+- Implement Monte Carlo algorithm to estimate Pi.
+- Implement Random Walk simulation for asset pricing.
+- Add visualization for Drift (Linearity) vs Volatility (Sqrt of Time).
+- Update requirements.txt with numpy, matplotlib, and seaborn.

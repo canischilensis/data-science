@@ -1,9 +1,19 @@
-pandas
-scipy
+# --- Core Data Science ---
 numpy
+pandas
+
+# --- Visualización ---
 matplotlib
 seaborn
-statsmodels
+
+# --- Machine Learning y Estadística ---
 scikit-learn
-plotly
-kneed
+scipy
+statsmodels
+
+# --- Manejo de Archivos Excel (.xlsx) ---
+openpyxl
+
+# --- Entorno Jupyter (Opcional pero recomendado) ---
+ipykernel
+notebook
