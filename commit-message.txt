@@ -1,5 +1,16 @@
-- Create 'estadistica/simulacion-monte-carlo' directory.
-- Implement Monte Carlo algorithm to estimate Pi.
-- Implement Random Walk simulation for asset pricing.
-- Add visualization for Drift (Linearity) vs Volatility (Sqrt of Time).
-- Update requirements.txt with numpy, matplotlib, and seaborn.
+Se implementa la lógica final de ingeniería de características para la variable 'Title' derivada de 'Name'.
+
+Cambios realizados:
+1. Normalización: Mapeo de títulos franceses (Mlle, Mme) a sus contrapartes inglesas (Miss, Mrs).
+2. Análisis de 'Nobility' (Nobleza):
+   - Se ejecutó Test Exacto de Fisher controlando por rango de edad (33-49 años).
+   - Resultados (p-value > 0.05) indican que el estatus noble no otorgó ventaja de supervivencia significativa frente a pares del mismo género.
+   - Acción: Fusión de nobleza masculina en 'Mr' y femenina en 'Mrs' para evitar overfitting por baja muestra (n=5).
+3. Análisis de 'Officer' (Oficiales/Profesionales):
+   - Se validó mediante Chi-Cuadrado que los oficiales hombres tienen tasas de mortalidad estadísticamente equivalentes a 'Mr'.
+   - Acción: Fusión de oficiales hombres en 'Mr'.
+   - Excepción: Se reasigna el caso único de oficial femenino (Dr. Alice Leader) a 'Mrs' tras validar supervivencia y rango de edad.
+4. Resultado Final:
+   - La variable queda reducida a 4 arquetipos demográficos robustos: Master, Miss, Mr, Mrs.
+
+Relacionado con la estrategia de reducción de ruido y preparación para imputación de edad.
