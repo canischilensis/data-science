@@ -1,16 +1,7 @@
-Se implementa la lógica final de ingeniería de características para la variable 'Title' derivada de 'Name'.
+feat: finalización del proyecto Titanic y selección de modelo óptimo
 
-Cambios realizados:
-1. Normalización: Mapeo de títulos franceses (Mlle, Mme) a sus contrapartes inglesas (Miss, Mrs).
-2. Análisis de 'Nobility' (Nobleza):
-   - Se ejecutó Test Exacto de Fisher controlando por rango de edad (33-49 años).
-   - Resultados (p-value > 0.05) indican que el estatus noble no otorgó ventaja de supervivencia significativa frente a pares del mismo género.
-   - Acción: Fusión de nobleza masculina en 'Mr' y femenina en 'Mrs' para evitar overfitting por baja muestra (n=5).
-3. Análisis de 'Officer' (Oficiales/Profesionales):
-   - Se validó mediante Chi-Cuadrado que los oficiales hombres tienen tasas de mortalidad estadísticamente equivalentes a 'Mr'.
-   - Acción: Fusión de oficiales hombres en 'Mr'.
-   - Excepción: Se reasigna el caso único de oficial femenino (Dr. Alice Leader) a 'Mrs' tras validar supervivencia y rango de edad.
-4. Resultado Final:
-   - La variable queda reducida a 4 arquetipos demográficos robustos: Master, Miss, Mr, Mrs.
-
-Relacionado con la estrategia de reducción de ruido y preparación para imputación de edad.
+Se ha completado el flujo de trabajo end-to-end:
+* Ingeniería de características: Extracción de títulos, agrupación familiar y discretización de tarifas.
+* Modelado: Entrenamiento y optimización de Random Forest, XGBoost y Voting Classifier.
+* Resultados: El Random Forest obtuvo el mejor desempeño (0.77751) mostrando mayor capacidad de generalización frente al XGBoost.
+* Archivos: Se unificaron los notebooks de EDA y Modelado para la entrega final.
