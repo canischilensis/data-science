@@ -1,7 +1,6 @@
-feat: finalización del proyecto Titanic y selección de modelo óptimo
+build(setup): install dependencies and load initial datasets
 
-Se ha completado el flujo de trabajo end-to-end:
-* Ingeniería de características: Extracción de títulos, agrupación familiar y discretización de tarifas.
-* Modelado: Entrenamiento y optimización de Random Forest, XGBoost y Voting Classifier.
-* Resultados: El Random Forest obtuvo el mejor desempeño (0.77751) mostrando mayor capacidad de generalización frente al XGBoost.
-* Archivos: Se unificaron los notebooks de EDA y Modelado para la entrega final.
+- Installed tensorflow_decision_forests, pandas, and numpy.
+- Implemented data ingestion for 'train.csv' and 'test.csv' (serving_df).
+- Verified TF-DF installation version.
+- Completed Step 1 & 2 of Data Pipeline Kanban.
