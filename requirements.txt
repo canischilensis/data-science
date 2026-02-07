@@ -1,20 +1,25 @@
-# --- Core Data Science ---
+# --- Core Data Science & Data Manipulation ---
 numpy
 pandas
 
-# --- Visualización ---
+# --- TensorFlow Ecosystem (Nueva Estrategia) ---
+tensorflow
+tensorflow_decision_forests
+
+# --- Classic Machine Learning (Comparativas y Preprocesamiento) ---
+scikit-learn
+xgboost
+scipy
+statsmodels
+
+# --- Visualización de Datos ---
 matplotlib
 seaborn
 
-# --- Machine Learning y Estadística ---
-scikit-learn
-scipy
-statsmodels
-xgboost
-
-# --- Manejo de Archivos Excel (.xlsx) ---
+# --- Manejo de Archivos y Formatos ---
 openpyxl
 
-# --- Entorno Jupyter (Opcional pero recomendado) ---
+# --- Herramientas de Desarrollo y Notebooks ---
 ipykernel
 notebook
+nbmerge         
