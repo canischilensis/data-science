@@ -4,7 +4,6 @@ pandas
 
 # --- TensorFlow Ecosystem (Nueva Estrategia) ---
 tensorflow
-tensorflow_decision_forests
 
 # --- Classic Machine Learning (Comparativas y Preprocesamiento) ---
 scikit-learn

@@ -1,6 +1,7 @@
-build(setup): install dependencies and load initial datasets
+feat: implement neural network for MNIST classification using TensorFlow
 
-- Installed tensorflow_decision_forests, pandas, and numpy.
-- Implemented data ingestion for 'train.csv' and 'test.csv' (serving_df).
-- Verified TF-DF installation version.
-- Completed Step 1 & 2 of Data Pipeline Kanban.
+- Add Jupyter Notebook with step-by-step documentation.
+- Implement data normalization and Flatten/Dense layers architecture.
+- Use ReLU (hidden) and Softmax (output) activation functions.
+- Achieve 97.92% accuracy on test dataset.
+- Export trained model to .keras format for production readiness.
