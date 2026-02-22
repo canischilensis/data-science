@@ -1,7 +1,7 @@
-feat: implement neural network for MNIST classification using TensorFlow
+refactor(ml): migración a CNN, data augmentation extremo y pipeline web
 
-- Add Jupyter Notebook with step-by-step documentation.
-- Implement data normalization and Flatten/Dense layers architecture.
-- Use ReLU (hidden) and Softmax (output) activation functions.
-- Achieve 97.92% accuracy on test dataset.
-- Export trained model to .keras format for production readiness.
+- Arquitectura: Reemplazo de red MLP plana por CNN (Conv2D + MaxPooling2D) para lograr invariancia espacial y entendimiento geométrico.
+- Entrenamiento: Implementación de ImageDataGenerator agresivo (shear, zoom, rotación y shift) para simular trazos irregulares de mouse en producción.
+- Preprocesamiento: Creación de `procesar_imagen_produccion` para normalizar inputs del frontend (inversión a fondo negro, escala de grises y resize a 28x28).
+- Artefacto: Exportación del modelo MVP (.keras) listo para despliegue en microservicios (FastAPI/Django).
+- Nota técnica: Se prioriza MVP con 91% de accuracy real. La regularización por Dropout queda documentada como próximo paso iterativo tras métricas en vivo.
