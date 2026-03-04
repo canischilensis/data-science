@@ -66,13 +66,13 @@ def main():
         objective="count:poisson", 
         random_state=42,
         enable_categorical=True,   
-        tree_method="hist"         
+        tree_method="hist",
+        early_stopping_rounds=50,
     )
     
     model.fit(
         train[features], train["sales"], 
         eval_set=[(valid[features], valid["sales"])], 
-        early_stopping_rounds=50,
         verbose=False
     )
 
