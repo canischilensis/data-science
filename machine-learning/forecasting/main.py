@@ -64,6 +64,7 @@ def main():
     model = xgb.XGBRegressor(
         n_estimators=1000, 
         objective="count:poisson", 
+        #objective="reg:absoluteerror", # <--- Le dices que ignore los outliers
         random_state=42,
         enable_categorical=True,   
         tree_method="hist",
